@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SE Calgary Rentals - Voice Search</title>
+<style>
+  :root {
+    --bg: #1a1c20;
+    --panel: #25282e;
+    --accent: #4d9fff;
+    --accent-dim: #2c4a6e;
+    --text: #e8eaed;
+    --text-dim: #9aa0a6;
+    --danger: #ff6b6b;
+    --ok: #4dff9f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  .sub { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  button {
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.4rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.stop { background: var(--danger); color: #1a1c20; }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .status {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--text-dim);
+    transition: background 0.2s;
+  }
+  .dot.live { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+
+  .heard {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    min-height: 1.4em;
+  }
+  .heard b { color: var(--text); }
+
+  .commands {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .commands code {
+    background: #33363d;
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  #map {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+  .tile {
+    background: var(--panel);
+    border: 1px solid #3a3d44;
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .tile:hover { border-color: var(--accent); }
+  .tile.active { border-color: var(--accent); background: var(--accent-dim); }
+  .tile .name { font-weight: 600; }
+  .tile .count { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .tile.empty .count { color: #555; }
+
+  #panel-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; }
+  #panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid #3a3d44;
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+  }
+  .card .price { font-weight: 600; font-size: 1.05rem; }
+  .card .beds { font-size: 0.8rem; color: var(--text-dim); float: right; }
+  .card .title { font-size: 0.85rem; color: var(--text-dim); margin: 6px 0 8px; }
+  .card .flag { font-size: 0.75rem; color: var(--danger); margin-bottom: 6px; }
+  .card a { color: var(--accent); font-size: 0.85rem; text-decoration: none; }
+  .card a:hover { text-decoration: underline; }
+  .empty-msg { color: var(--text-dim); font-size: 0.9rem; }
+  .search-link { grid-column: 1 / -1; margin-bottom: 4px; }
+  .search-link a {
+    display: inline-block;
+    background: var(--accent);
+    color: #0a0a0a;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+  }
+  .search-link a:hover { text-decoration: none; opacity: 0.9; }
+  .sample-note {
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  .unsupported {
+    background: #4a2a2a;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>SE Calgary Rental Houses</h1>
+<div class="sub">Click a neighborhood on the map. It opens live RentFaster results (with photos) in a new tab, and shows a price guide below.</div>
+
+<div class="commands">
+  <b>Tip:</b> Each tile shows how many sample listings are on file. Clicking a tile opens the current house rentals for that neighborhood on RentFaster, where you can see photos and full details.
+</div>
+
+<div id="map"></div>
+<div id="panel-title"></div>
+<div id="panel"></div>
+
+<script>
+const data = {
+  "Quarry Park": [],
+  "Douglasdale/Glen": [
+    [4500,"5bd+den / 3.5ba","Bi-level on Eaglequest Golf Course, furnished","https://www.rentfaster.ca/ab/calgary/rentals/house/5-bedrooms/douglasdale/498698"],
+    [3700,"4bd / 2.5ba","Furnished, open concept, near Quarry Park","https://www.rentfaster.ca/properties/3749-douglas-ridge-way-se-calgary-90900"]
+  ],
+  "Riverbend": [
+    [2550,"3bd / 2.5ba","Quick walk to Remington YMCA & Quarry Park library","https://www.rentfaster.ca/properties/rentals-calgary-42495"],
+    [2450,"3bd / 1.5ba","Quiet street, family-friendly, near Riverbend Shopping","https://www.rentfaster.ca/properties/rentals-calgary-533058"]
+  ],
+  "McKenzie Lake": [
+    [1100,"3+den / 2.5ba","Upper floor only - renovated, gas fireplace","https://www.rentfaster.ca/properties/216-mt-apex-green-se-calgary-724948",true]
+  ],
+  "McKenzie Towne": [
+    [2350,"2bd / 2ba","Main floor, ensuite laundry, heated tile floors","https://www.rentfaster.ca/properties/135-inverness-lane-southeast-calgary-546616",true]
+  ],
+  "Copperfield": [
+    [3000,"3bd / 3ba","Stunning bright home, detached double garage","https://www.rentfaster.ca/ab/calgary/rentals/house/3-bedrooms/copperfield/520040"],
+    [2900,"4bd / 3.5ba","Open concept, developed in-law basement suite","https://www.rentfaster.ca/properties/rentals-calgary-299114"]
+  ],
+  "New Brighton": [
+    [2100,"3bd / 2.5ba","Two story detached, front attached garage, RENT REDUCED","https://www.rentfaster.ca/properties/228-new-brighton-dr-se-calgary-748017"],
+    [2400,"3bd / 2.5ba","Beautiful detached home, near Walmart","https://www.rentfaster.ca/properties/49-new-brighton-bay-southeast-calgary-616192"],
+    [2595,"4+den / 2.5ba","Super clean 4 bedroom, pets welcome","https://www.rentfaster.ca/properties/145-brightondale-parade-southeast-calgary-656294"]
+  ],
+  "Cranston": [
+    [2375,"3bd / 2.5ba","Functional floor plan, partially finished basement","https://www.rentfaster.ca/properties/cranston-southeast-calgary-530636"],
+    [2950,"3+den / 2.5ba","Cranston Stonehouse, oversized insulated garage","https://www.rentfaster.ca/properties/rentals-calgary-75218"],
+    [3000,"3bd / 2.5ba","105 Cranleigh Bay SE, double garage, backs green space","https://www.rentfaster.ca/properties/105-cranleigh-bay-southeast-calgary-470487"],
+    [3000,"3bd / 2.5ba","Fully furnished duplex, short or long term","https://www.rentfaster.ca/properties/rentals-calgary-619900"]
+  ],
+  "Auburn Bay": [],
+  "Seton": [
+    [2900,"3+den / 2.5ba","2000sqft, front double garage, internet included","https://www.rentfaster.ca/properties/rentals-calgary-559624"],
+    [3400,"4bd / 3.5ba","748 Seton Circle SE, solar panels save on electricity","https://www.rentfaster.ca/ab/calgary/rentals/house/4-bedrooms/seton/547123"],
+    [2450,"3+den / 2.5ba","99 Seton Gardens SE, all utilities included","https://www.rentfaster.ca/properties/99-seton-gardens-southeast-calgary-390673"],
+    [2500,"4bd / 2.5ba","Brand new 3BR + bonus room, 1875sqft","https://www.rentfaster.ca/properties/19728-44-st-se-calgary-737492"]
+  ],
+  "Mahogany": [
+    [2990,"3+den / 2.5ba","Detached, front garage, Masters Row SE","https://www.rentfaster.ca/properties/masters-row-se-calgary-366441"],
+    [2300,"4bd / 3ba","315 Magnolia Square SE, 1786sqft, quartz counters","https://www.rentfaster.ca/properties/315-magnolia-square-southeast-calgary-480116"]
+  ],
+  "Wolf Willow": [
+    [2675,"3bd / 2.5ba","Double car garage - EXECUTIVE, 147 Wolf Hollow Manor SE","https://www.rentfaster.ca/588003"],
+    [2299,"3+den / 2.5ba","Certified Green Home, solar panels, river views","https://www.rentfaster.ca/properties/71-wolf-creek-manor-southeast-calgary-589007"],
+    [2200,"3bd / 2.5ba","82 Wolf Creek Rise SE, 1800sqft, built 2022","https://www.rentfaster.ca/properties/82-wolf-creek-rise-southeast-calgary-624815"]
+  ],
+  "Walden": [
+    [3400,"3bd / 3ba","Luxury Home Rental - Fully Furnished","https://www.rentfaster.ca/properties/883-walgrove-boulevard-southeast-calgary-545379"]
+  ],
+  "Chaparral": [
+    [2700,"3+den / 2.5ba","Cozy family home, lake community, 2500sqft","https://www.rentfaster.ca/properties/52-chapalina-common-southeast-calgary-712351"],
+    [3400,"4bd / 3.5ba","2800+sqft, lake access, family room w/ fireplace","https://www.rentfaster.ca/properties/34-chapala-road-southeast-calgary-323495"]
+  ],
+  "Legacy": [
+    [2100,"4bd / 3ba","Main floor, brand new home in Legacy","https://www.rentfaster.ca/properties/rentals-calgary-606138",true],
+    [2300,"3bd / 2.5ba","Charming 3 Bedroom Home","https://www.rentfaster.ca/properties/28-legacy-crescent-se-calgary-100983"],
+    [3100,"3bd / 2.5ba","Brand new, never lived in, double attached garage","https://www.rentfaster.ca/ab/calgary/rentals/house/3-bedrooms/legacy/481945"]
+  ],
+  "Belmont (SW)": [
+    [3500,"5bd / 3ba","Brand new house, legal 2bed basement suite","https://www.rentfaster.ca/properties/rentals-calgary-639641",true],
+    [2300,"4bd / 3ba","1789sqft smart home with bonus room","https://www.rentfaster.ca/properties/273-belmont-park-southwest-calgary-622848"],
+    [2195,"3bd / 2.5ba","Brand new, upgraded duplex","https://www.rentfaster.ca/properties/belmont-drive-sw-calgary-546221"]
+  ]
+};
+
+const positions = {
+  "Quarry Park": [1,3],
+  "McKenzie Lake": [2,1],
+  "McKenzie Towne": [2,3],
+  "Copperfield": [2,5],
+  "Douglasdale/Glen": [3,1],
+  "New Brighton": [3,3],
+  "Riverbend": [3,5],
+  "Cranston": [4,1],
+  "Auburn Bay": [4,4],
+  "Seton": [5,3],
+  "Mahogany": [5,5],
+  "Wolf Willow": [6,1],
+  "Walden": [6,3],
+  "Chaparral": [6,5],
+  "Legacy": [7,2],
+  "Belmont (SW)": [7,4]
+};
+
+// Spoken aliases -> canonical neighborhood key. Order matters: longer/more specific phrases first.
+const aliases = [
+  ["mckenzie towne", "McKenzie Towne"],
+  ["mckenzie town", "McKenzie Towne"],
+  ["mackenzie towne", "McKenzie Towne"],
+  ["mackenzie town", "McKenzie Towne"],
+  ["mckenzie lake", "McKenzie Lake"],
+  ["mackenzie lake", "McKenzie Lake"],
+  ["new brighton", "New Brighton"],
+  ["auburn bay", "Auburn Bay"],
+  ["quarry park", "Quarry Park"],
+  ["douglasdale", "Douglasdale/Glen"],
+  ["douglas dale", "Douglasdale/Glen"],
+  ["the glen", "Douglasdale/Glen"],
+  ["riverbend", "Riverbend"],
+  ["river bend", "Riverbend"],
+  ["cranston", "Cranston"],
+  ["seton", "Seton"],
+  ["mahogany", "Mahogany"],
+  ["copperfield", "Copperfield"],
+  ["copper field", "Copperfield"],
+  ["wolf willow", "Wolf Willow"],
+  ["walden", "Walden"],
+  ["belmont", "Belmont (SW)"],
+  ["chaparral", "Chaparral"],
+  ["legacy", "Legacy"]
+];
+
+let currentKey = null;
+let lastResultTime = 0;
+
+const mapEl = document.getElementById('map');
+const panelTitle = document.getElementById('panel-title');
+const panel = document.getElementById('panel');
+const heard = document.getElementById('heard');
+
+function buildMap() {
+  Object.keys(positions).forEach(function(name){
+    const pos = positions[name];
+    const count = data[name].length;
+    const tile = document.createElement('div');
+    tile.className = 'tile' + (count === 0 ? ' empty' : '');
+    tile.dataset.key = name;
+    tile.style.gridRow = pos[0];
+    tile.style.gridColumn = pos[1] + ' / span 1';
+    tile.innerHTML = '<div class="name">' + name + '</div><div class="count">' + count + ' house' + (count === 1 ? '' : 's') + '</div>';
+    tile.addEventListener('click', function(){ select(name); window.open(searchUrl(name), '_blank'); });
+    mapEl.appendChild(tile);
+  });
+}
+
+// RentFaster filters by MAP LOCATION, not by name: ?l=zoom,lat,lng. We center the map
+// on each neighborhood so the link lands on live, current house listings (with photos)
+// rather than stale per-listing pages. Verified working format.
+const coords = {
+  "Quarry Park":      [50.9490, -114.0030],
+  "Douglasdale/Glen": [50.9260, -113.9740],
+  "Riverbend":        [50.9600, -114.0080],
+  "McKenzie Lake":    [50.8990, -113.9760],
+  "McKenzie Towne":   [50.9080, -113.9670],
+  "Copperfield":      [50.9050, -113.9450],
+  "New Brighton":     [50.9080, -113.9560],
+  "Cranston":         [50.8797, -113.9889],
+  "Auburn Bay":       [50.8950, -113.9560],
+  "Seton":            [50.8730, -113.9580],
+  "Mahogany":         [50.8889, -113.9347],
+  "Wolf Willow":      [50.8620, -113.9730],
+  "Walden":           [50.8870, -114.0640],
+  "Chaparral":        [50.8880, -114.0180],
+  "Legacy":           [50.8520, -114.0630],
+  "Belmont (SW)":     [50.8430, -114.0870]
+};
+
+function searchUrl(name) {
+  const c = coords[name];
+  const base = 'https://www.rentfaster.ca/ab/calgary/rentals/house/';
+  // #listview opens RentFaster's photo list (big pictures) instead of the map.
+  if (!c) return base + '#listview';
+  return base + '?l=14,' + c[0] + ',' + c[1] + '#listview';
+}
+
+function select(name, autoOpen) {
+  currentKey = name;
+  Array.from(mapEl.children).forEach(function(t){
+    t.classList.toggle('active', t.dataset.key === name);
+  });
+  const items = data[name];
+  panelTitle.textContent = name;
+
+  let html = '<div class="search-link"><a href="' + searchUrl(name) +
+    '" target="_blank" rel="noopener">Browse live house rentals in ' + name +
+    ' on RentFaster &rarr;</a></div>';
+
+  if (items.length === 0) {
+    html += '<div class="empty-msg" style="grid-column:1/-1">No sample listings on file for ' + name +
+      ' &mdash; use the link above for current results.</div>';
+    panel.innerHTML = html;
+    if (autoOpen) openCurrent();
+    return;
+  }
+
+  html += '<div class="sample-note" style="grid-column:1/-1">Sample listings below are illustrative ' +
+    '(prices/details may be out of date). Each link opens current ' + name + ' results on RentFaster.</div>';
+  items.forEach(function(it){
+    const price = it[0], beds = it[1], title = it[2], flag = it[4];
+    html += '<div class="card">';
+    html += '<div><span class="price">$' + price.toLocaleString() + '</span><span class="beds">' + beds + '</span></div>';
+    html += '<div class="title">' + title + '</div>';
+    if (flag) html += '<div class="flag">possible suite, not full house</div>';
+    html += '<a href="' + searchUrl(name) + '" target="_blank" rel="noopener">Find in ' + name + ' &rarr;</a>';
+    html += '</div>';
+  });
+  panel.innerHTML = html;
+  if (autoOpen) openCurrent();
+}
+
+function openCurrent() {
+  if (!currentKey) return;
+  window.open(searchUrl(currentKey), '_blank');
+}
+
+function findNeighborhood(text) {
+  for (let i = 0; i < aliases.length; i++) {
+    if (text.indexOf(aliases[i][0]) !== -1) return aliases[i][1];
+  }
+  return null;
+}
+
+buildMap();
+select("Mahogany");
+</script>
+
+</body>
+</html>
