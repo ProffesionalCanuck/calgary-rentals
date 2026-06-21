@@ -286,16 +286,24 @@ const panelTitle = document.getElementById('panel-title');
 const panel = document.getElementById('panel');
 const heard = document.getElementById('heard');
 
+// Live house counts from RentFaster (map-area at zoom 14; nearby communities overlap).
+const liveCounts = {
+  "Copperfield": 52, "New Brighton": 49, "Auburn Bay": 48, "Mahogany": 46,
+  "McKenzie Towne": 45, "Walden": 42, "Seton": 35, "McKenzie Lake": 33,
+  "Douglasdale/Glen": 28, "Wolf Willow": 27, "Cranston": 24, "Legacy": 19,
+  "Chaparral": 15, "Quarry Park": 12, "Riverbend": 11, "Belmont (SW)": 5
+};
+
 function buildMap() {
   Object.keys(positions).forEach(function(name){
     const pos = positions[name];
-    const count = data[name].length;
+    const count = (name in liveCounts) ? liveCounts[name] : data[name].length;
     const tile = document.createElement('div');
     tile.className = 'tile' + (count === 0 ? ' empty' : '');
     tile.dataset.key = name;
     tile.style.gridRow = pos[0];
     tile.style.gridColumn = pos[1] + ' / span 1';
-    tile.innerHTML = '<div class="name">' + name + '</div><div class="count">' + count + ' house' + (count === 1 ? '' : 's') + '</div>';
+    tile.innerHTML = '<div class="name">' + name + '</div><div class="count">~' + count + ' house' + (count === 1 ? '' : 's') + '</div>';
     tile.addEventListener('click', function(){ select(name); window.open(searchUrl(name), '_blank'); });
     mapEl.appendChild(tile);
   });
