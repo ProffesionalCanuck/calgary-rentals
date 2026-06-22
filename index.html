@@ -141,6 +141,18 @@
     margin-bottom: 4px;
     line-height: 1.4;
   }
+  #all-link-box { margin-bottom: 1.5rem; text-align: center; }
+  #all-link {
+    display: inline-block;
+    background: var(--ok);
+    color: #0a0a0a;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    padding: 0.7rem 1.4rem;
+    border-radius: 8px;
+  }
+  #all-link:hover { opacity: 0.9; }
   .unsupported {
     background: #4a2a2a;
     border: 1px solid var(--danger);
@@ -154,13 +166,15 @@
 <body>
 
 <h1>SE Calgary Rental Houses</h1>
-<div class="sub">Click a neighborhood on the map. It opens live RentFaster results (with photos) in a new tab, and shows a price guide below.</div>
+<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings (with photos) in a new tab, and shows a price guide below.</div>
 
 <div class="commands">
-  <b>Tip:</b> Each tile shows how many sample listings are on file. Clicking a tile opens the current house rentals for that neighborhood on RentFaster, where you can see photos and full details.
+  <b>Tip:</b> Each tile shows how many houses are currently for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see every neighborhood's houses in one long list.
 </div>
 
 <div id="map"></div>
+
+<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses in one list &rarr;</a></div>
 <div id="panel-title"></div>
 <div id="panel"></div>
 
@@ -286,12 +300,12 @@ const panelTitle = document.getElementById('panel-title');
 const panel = document.getElementById('panel');
 const heard = document.getElementById('heard');
 
-// Live house counts from RentFaster (map-area at zoom 14; nearby communities overlap).
+// True per-community house counts from RentFaster's exact neighborhood filter (no overlap).
 const liveCounts = {
-  "Copperfield": 52, "New Brighton": 49, "Auburn Bay": 48, "Mahogany": 46,
-  "McKenzie Towne": 45, "Walden": 42, "Seton": 35, "McKenzie Lake": 33,
-  "Douglasdale/Glen": 28, "Wolf Willow": 27, "Cranston": 24, "Legacy": 19,
-  "Chaparral": 15, "Quarry Park": 12, "Riverbend": 11, "Belmont (SW)": 5
+  "Copperfield": 12, "Cranston": 10, "Auburn Bay": 9, "McKenzie Towne": 9,
+  "New Brighton": 9, "Mahogany": 8, "Belmont (SW)": 7, "Seton": 7,
+  "Legacy": 6, "Walden": 5, "Douglasdale/Glen": 4, "McKenzie Lake": 4,
+  "Riverbend": 1, "Wolf Willow": 1, "Chaparral": 0, "Quarry Park": 0
 };
 
 function buildMap() {
@@ -303,40 +317,35 @@ function buildMap() {
     tile.dataset.key = name;
     tile.style.gridRow = pos[0];
     tile.style.gridColumn = pos[1] + ' / span 1';
-    tile.innerHTML = '<div class="name">' + name + '</div><div class="count">~' + count + ' house' + (count === 1 ? '' : 's') + '</div>';
+    tile.innerHTML = '<div class="name">' + name + '</div><div class="count">' + count + ' house' + (count === 1 ? '' : 's') + '</div>';
     tile.addEventListener('click', function(){ select(name); window.open(searchUrl(name), '_blank'); });
     mapEl.appendChild(tile);
   });
 }
 
-// RentFaster filters by MAP LOCATION, not by name: ?l=zoom,lat,lng. We center the map
-// on each neighborhood so the link lands on live, current house listings (with photos)
-// rather than stale per-listing pages. Verified working format.
-const coords = {
-  "Quarry Park":      [50.9490, -114.0030],
-  "Douglasdale/Glen": [50.9260, -113.9740],
-  "Riverbend":        [50.9600, -114.0080],
-  "McKenzie Lake":    [50.8990, -113.9760],
-  "McKenzie Towne":   [50.9080, -113.9670],
-  "Copperfield":      [50.9050, -113.9450],
-  "New Brighton":     [50.9080, -113.9560],
-  "Cranston":         [50.8797, -113.9889],
-  "Auburn Bay":       [50.8950, -113.9560],
-  "Seton":            [50.8730, -113.9580],
-  "Mahogany":         [50.8889, -113.9347],
-  "Wolf Willow":      [50.8620, -113.9730],
-  "Walden":           [50.8870, -114.0640],
-  "Chaparral":        [50.8880, -114.0180],
-  "Legacy":           [50.8520, -114.0630],
-  "Belmont (SW)":     [50.8430, -114.0870]
+// RentFaster's TRUE per-community filter (verified): ?neighborhood=<Name>&community_subtype=Community
+// &proximity_type=location-community. This returns ONLY houses in that exact community (no map-circle
+// overlap). A couple of our tile names differ from RentFaster's community name, mapped below.
+const communityName = {
+  "Douglasdale/Glen": "Douglasdale",
+  "Belmont (SW)":     "Belmont"
 };
 
+const RF_BASE = 'https://www.rentfaster.ca/ab/calgary/rentals/house/';
+const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community#listview';
+
 function searchUrl(name) {
-  const c = coords[name];
-  const base = 'https://www.rentfaster.ca/ab/calgary/rentals/house/';
+  const c = communityName[name] || name;
   // #listview opens RentFaster's photo list (big pictures) instead of the map.
-  if (!c) return base + '#listview';
-  return base + '?l=14,' + c[0] + ',' + c[1] + '#listview';
+  return RF_BASE + '?neighborhood=' + encodeURIComponent(c) + RF_SUFFIX;
+}
+
+// One combined link: every neighborhood's houses in a single long list (repeated neighborhood= params).
+function allUrl() {
+  const params = Object.keys(positions).map(function(name){
+    return 'neighborhood=' + encodeURIComponent(communityName[name] || name);
+  }).join('&');
+  return RF_BASE + '?' + params + RF_SUFFIX;
 }
 
 function select(name, autoOpen) {
@@ -388,6 +397,7 @@ function findNeighborhood(text) {
 
 buildMap();
 select("Mahogany");
+document.getElementById('all-link').href = allUrl();
 </script>
 
 </body>
