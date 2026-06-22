@@ -166,15 +166,15 @@
 <body>
 
 <h1>SE Calgary Rental Houses</h1>
-<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings (with photos) in a new tab, and shows a price guide below.</div>
+<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings ($2000+, with photos) in a new tab, and shows a price guide below.</div>
 
 <div class="commands">
-  <b>Tip:</b> Each tile shows how many houses are currently for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see every neighborhood's houses in one long list.
+  <b>Tip:</b> Each tile shows how many houses ($2000+) are currently for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see every neighborhood's houses in one long list.
 </div>
 
 <div id="map"></div>
 
-<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses in one list &rarr;</a></div>
+<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses ($2000+) in one list &rarr;</a></div>
 <div id="panel-title"></div>
 <div id="panel"></div>
 
@@ -184,10 +184,6 @@ const data = {
   "Douglasdale/Glen": [
     [4500,"5bd+den / 3.5ba","Bi-level on Eaglequest Golf Course, furnished","https://www.rentfaster.ca/ab/calgary/rentals/house/5-bedrooms/douglasdale/498698"],
     [3700,"4bd / 2.5ba","Furnished, open concept, near Quarry Park","https://www.rentfaster.ca/properties/3749-douglas-ridge-way-se-calgary-90900"]
-  ],
-  "Riverbend": [
-    [2550,"3bd / 2.5ba","Quick walk to Remington YMCA & Quarry Park library","https://www.rentfaster.ca/properties/rentals-calgary-42495"],
-    [2450,"3bd / 1.5ba","Quiet street, family-friendly, near Riverbend Shopping","https://www.rentfaster.ca/properties/rentals-calgary-533058"]
   ],
   "McKenzie Lake": [
     [1100,"3+den / 2.5ba","Upper floor only - renovated, gas fireplace","https://www.rentfaster.ca/properties/216-mt-apex-green-se-calgary-724948",true]
@@ -252,7 +248,6 @@ const positions = {
   "Copperfield": [2,5],
   "Douglasdale/Glen": [3,1],
   "New Brighton": [3,3],
-  "Riverbend": [3,5],
   "Cranston": [4,1],
   "Auburn Bay": [4,4],
   "Seton": [5,3],
@@ -300,12 +295,12 @@ const panelTitle = document.getElementById('panel-title');
 const panel = document.getElementById('panel');
 const heard = document.getElementById('heard');
 
-// True per-community house counts from RentFaster's exact neighborhood filter (no overlap).
+// True per-community counts from RentFaster's exact neighborhood filter, $2000+ houses only.
 const liveCounts = {
-  "Copperfield": 12, "Cranston": 10, "Auburn Bay": 9, "McKenzie Towne": 9,
-  "New Brighton": 9, "Mahogany": 8, "Belmont (SW)": 7, "Seton": 7,
-  "Legacy": 6, "Walden": 5, "Douglasdale/Glen": 4, "McKenzie Lake": 4,
-  "Riverbend": 1, "Wolf Willow": 1, "Chaparral": 0, "Quarry Park": 0
+  "Copperfield": 12, "Auburn Bay": 9, "Cranston": 9, "McKenzie Towne": 9,
+  "New Brighton": 9, "Mahogany": 8, "Belmont (SW)": 7, "Legacy": 6,
+  "Seton": 6, "McKenzie Lake": 4, "Walden": 4, "Douglasdale/Glen": 3,
+  "Wolf Willow": 1, "Chaparral": 0, "Quarry Park": 0
 };
 
 function buildMap() {
@@ -332,7 +327,8 @@ const communityName = {
 };
 
 const RF_BASE = 'https://www.rentfaster.ca/ab/calgary/rentals/house/';
-const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community#listview';
+// price_min=2000 limits results to houses renting for $2000+.
+const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community&price_min=2000#listview';
 
 function searchUrl(name) {
   const c = communityName[name] || name;
@@ -353,11 +349,12 @@ function select(name, autoOpen) {
   Array.from(mapEl.children).forEach(function(t){
     t.classList.toggle('active', t.dataset.key === name);
   });
-  const items = data[name];
+  // Only show sample listings priced $2000+ to match the live filter.
+  const items = (data[name] || []).filter(function(it){ return it[0] >= 2000; });
   panelTitle.textContent = name;
 
   let html = '<div class="search-link"><a href="' + searchUrl(name) +
-    '" target="_blank" rel="noopener">Browse live house rentals in ' + name +
+    '" target="_blank" rel="noopener">Browse live $2000+ house rentals in ' + name +
     ' on RentFaster &rarr;</a></div>';
 
   if (items.length === 0) {
