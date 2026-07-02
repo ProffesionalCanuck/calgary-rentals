@@ -166,15 +166,15 @@
 <body>
 
 <h1>SE Calgary Rental Houses</h1>
-<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings ($2000+, with photos) in a new tab, and shows a price guide below.</div>
+<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings ($2000+, available now or in July, with photos) in a new tab, and shows a price guide below.</div>
 
 <div class="commands">
-  <b>Tip:</b> Each tile shows how many houses ($2000+) are currently for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see every neighborhood's houses in one long list.
+  <b>Tip:</b> Each tile shows how many houses ($2000+, ready to move in now or during July) are for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see them all in one long list.
 </div>
 
 <div id="map"></div>
 
-<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses ($2000+) in one list &rarr;</a></div>
+<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses ($2000+, now/July) in one list &rarr;</a></div>
 <div id="panel-title"></div>
 <div id="panel"></div>
 
@@ -295,12 +295,12 @@ const panelTitle = document.getElementById('panel-title');
 const panel = document.getElementById('panel');
 const heard = document.getElementById('heard');
 
-// True per-community counts from RentFaster's exact neighborhood filter, $2000+ houses only.
+// Per-community counts: $2000+ AND available immediately or during July (RentFaster exact filter).
 const liveCounts = {
-  "Copperfield": 12, "McKenzie Towne": 10, "Cranston": 9, "Auburn Bay": 9,
-  "New Brighton": 8, "Mahogany": 7, "Belmont (SW)": 6, "Legacy": 6,
-  "Seton": 6, "Walden": 5, "Douglasdale/Glen": 5, "McKenzie Lake": 3,
-  "Chaparral": 1, "Wolf Willow": 0, "Quarry Park": 0
+  "New Brighton": 7, "Seton": 6, "Auburn Bay": 5, "Mahogany": 5,
+  "Belmont (SW)": 5, "Legacy": 5, "Copperfield": 4, "Cranston": 3,
+  "McKenzie Towne": 3, "Walden": 3, "McKenzie Lake": 3, "Douglasdale/Glen": 2,
+  "Chaparral": 0, "Wolf Willow": 0, "Quarry Park": 0
 };
 
 function buildMap() {
@@ -327,8 +327,8 @@ const communityName = {
 };
 
 const RF_BASE = 'https://www.rentfaster.ca/ab/calgary/rentals/house/';
-// price_min=2000 limits results to houses renting for $2000+.
-const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community&price_min=2000#listview';
+// price_min=2000 = houses $2000+. availability=Immediate&availability=July = move-in now or during July.
+const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community&price_min=2000&availability=Immediate&availability=July#listview';
 
 function searchUrl(name) {
   const c = communityName[name] || name;
@@ -354,7 +354,7 @@ function select(name, autoOpen) {
   panelTitle.textContent = name;
 
   let html = '<div class="search-link"><a href="' + searchUrl(name) +
-    '" target="_blank" rel="noopener">Browse live $2000+ house rentals in ' + name +
+    '" target="_blank" rel="noopener">Browse $2000+ houses (now/July) in ' + name +
     ' on RentFaster &rarr;</a></div>';
 
   if (items.length === 0) {
