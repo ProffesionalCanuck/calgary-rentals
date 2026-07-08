@@ -231,6 +231,74 @@
     @keyframes pop { from { transform: translate(-50%, 12px); opacity: 0; } }
   }
 
+  .strict-tag { color: var(--soon); font-weight: 600; }
+
+  .alarm {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.1rem;
+    padding: 2rem 1.5rem;
+    background: #801E15;
+    color: #FFF6F2;
+    text-align: center;
+  }
+  .alarm.show { display: flex; }
+  @media (prefers-reduced-motion: no-preference) {
+    .alarm.show { animation: alarmPulse 1.6s ease-in-out infinite alternate; }
+    @keyframes alarmPulse { from { background: #801E15; } to { background: #A62B1C; } }
+  }
+  .alarm .label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    opacity: 0.85;
+  }
+  .alarm h2 {
+    font-size: 2rem;
+    margin: 0;
+    line-height: 1.2;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+  .alarm .due { font-size: 1.05rem; opacity: 0.9; }
+  .alarm .hold {
+    position: relative;
+    overflow: hidden;
+    width: min(100%, 22rem);
+    min-height: 64px;
+    background: #FFF6F2;
+    color: #801E15;
+    font-size: 1.15rem;
+    font-weight: 700;
+    border-radius: 14px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .alarm .hold .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: rgba(128, 30, 21, 0.25);
+  }
+  .alarm .hold .lbl { position: relative; }
+  .alarm .snooze {
+    background: none;
+    border: 2px solid rgba(255, 246, 242, 0.7);
+    color: #FFF6F2;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+  }
+  .alarm .snooze:disabled { opacity: 0.4; cursor: default; }
+
   .done-tools { display: flex; justify-content: flex-end; margin-top: 0.4rem; }
   footer { margin-top: 2rem; text-align: center; color: var(--ink-dim); font-size: 0.8rem; }
 </style>
@@ -271,6 +339,13 @@
         <option value="monthly">Every month</option>
       </select>
     </div>
+    <div>
+      <label for="taskStrict">How firm should it be?</label>
+      <select id="taskStrict">
+        <option value="normal">Normal — a notification</option>
+        <option value="strict">Strict — full-screen alarm until I do it</option>
+      </select>
+    </div>
     <button class="btn-accent submit" type="submit">Add reminder</button>
   </form>
 
@@ -280,6 +355,17 @@
 </div>
 
 <div class="banner" id="banner" role="status"></div>
+
+<div class="alarm" id="alarm" role="alertdialog" aria-modal="true" aria-labelledby="alarmTitle">
+  <div class="label">Time to do this now</div>
+  <h2 id="alarmTitle"></h2>
+  <div class="due" id="alarmDue"></div>
+  <button type="button" class="hold" id="alarmDone">
+    <span class="fill" id="alarmFill"></span>
+    <span class="lbl">Hold to mark done</span>
+  </button>
+  <button type="button" class="snooze" id="alarmSnooze">Snooze 5 minutes</button>
+</div>
 
 <script>
 (function () {
@@ -416,6 +502,7 @@
     var bits = [];
     if (t.due) bits.push(friendlyWhen(t.due));
     if (t.repeat && t.repeat !== 'none') bits.push('<span class="repeat">· ' + REPEAT_LABEL[t.repeat] + '</span>');
+    if (t.strict && !t.done) bits.push('<span class="strict-tag">· 🔒 strict</span>');
     when.innerHTML = bits.join(' ');
     if (bits.length) body.appendChild(when);
     li.appendChild(body);
@@ -453,13 +540,15 @@
       if (next) {
         t.due = next;
         t.notified = false;
+        t.snoozesLeft = 3;
+        t.lastNag = 0;
         save(); render();
         showBanner('Done! Next one: ' + friendlyWhen(next));
         return;
       }
     }
     t.done = !t.done;
-    if (!t.done) t.notified = false;
+    if (!t.done) { t.notified = false; t.snoozesLeft = 3; t.lastNag = 0; }
     save(); render();
   }
 
@@ -492,6 +581,8 @@
       title: title,
       due: due,
       repeat: document.getElementById('taskRepeat').value,
+      strict: document.getElementById('taskStrict').value === 'strict',
+      snoozesLeft: 3,
       done: false,
       notified: false
     });
@@ -537,39 +628,140 @@
   }
 
   function fireNotification(t) {
-    var title = '⏰ ' + t.title;
-    var body = 'Due ' + friendlyWhen(t.due);
+    var title = (t.strict ? '🚨 ' : '⏰ ') + t.title;
+    var body = t.strict ? 'Do it now — this alarm will keep going.' : 'Due ' + friendlyWhen(t.due);
     if ('Notification' in window && Notification.permission === 'granted') {
       // Android Chrome only allows notifications through a service worker.
       if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then(function (reg) {
-          reg.showNotification(title, { body: body, tag: t.id, vibrate: [200, 100, 200] });
+          reg.showNotification(title, {
+            body: body, tag: t.id, vibrate: [200, 100, 200],
+            requireInteraction: !!t.strict, renotify: !!t.strict
+          });
         }).catch(function () { tryDirect(title, body, t.id); });
       } else {
         tryDirect(title, body, t.id);
       }
     }
-    showBanner('⏰ ' + t.title);
-    beepAndBuzz();
+    if (!alarmTaskId) {
+      // The full-screen alarm has its own siren; don't double up.
+      showBanner(title);
+      beepAndBuzz();
+    }
   }
   function tryDirect(title, body, tag) {
     try { new Notification(title, { body: body, tag: tag }); }
     catch (e) { /* in-page banner already shown */ }
   }
 
+  var NAG_EVERY_MS = 60000;
+
   function checkDue() {
     var now = Date.now();
-    var fired = false;
+    var changed = false;
     tasks.forEach(function (t) {
-      if (t.done || !t.due || t.notified) return;
-      if (new Date(t.due).getTime() <= now) {
+      if (t.done || !t.due) return;
+      if (new Date(t.due).getTime() > now) return;
+      if (!t.notified) {
         t.notified = true;
-        fired = true;
+        t.lastNag = now;
+        changed = true;
+        fireNotification(t);
+      } else if (t.strict && now - (t.lastNag || 0) >= NAG_EVERY_MS) {
+        // Strict tasks re-notify every minute until they're done.
+        t.lastNag = now;
+        changed = true;
         fireNotification(t);
       }
     });
-    if (fired) { save(); render(); }
+    if (changed) { save(); render(); }
+    ensureAlarm();
   }
+
+  // ---------- Strict full-screen alarm ----------
+  var alarmEl = document.getElementById('alarm');
+  var alarmTaskId = null;
+  var alarmBeepTimer = null;
+  var alarmHoldTimer = null;
+  var wakeLock = null;
+
+  function ensureAlarm() {
+    var now = Date.now();
+    var due = tasks.filter(function (t) {
+      return t.strict && !t.done && t.due && new Date(t.due).getTime() <= now;
+    }).sort(function (a, b) { return new Date(a.due) - new Date(b.due); });
+    if (!due.length) { hideAlarm(); return; }
+    if (alarmTaskId === due[0].id) return;
+    showAlarm(due[0]);
+  }
+
+  function showAlarm(t) {
+    alarmTaskId = t.id;
+    document.getElementById('alarmTitle').textContent = t.title;
+    document.getElementById('alarmDue').textContent = 'Was due ' + friendlyWhen(t.due);
+    updateSnoozeBtn(t);
+    alarmEl.classList.add('show');
+    clearInterval(alarmBeepTimer);
+    alarmBeepTimer = setInterval(beepAndBuzz, 2500);
+    beepAndBuzz();
+    if (navigator.wakeLock) {
+      // Keep the screen on while the alarm is demanding attention.
+      navigator.wakeLock.request('screen')
+        .then(function (l) { wakeLock = l; })
+        .catch(function () { /* best effort */ });
+    }
+  }
+
+  function hideAlarm() {
+    if (!alarmTaskId) return;
+    alarmTaskId = null;
+    alarmEl.classList.remove('show');
+    clearInterval(alarmBeepTimer);
+    resetHold();
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+
+  function updateSnoozeBtn(t) {
+    var btn = document.getElementById('alarmSnooze');
+    var left = t.snoozesLeft == null ? 3 : t.snoozesLeft;
+    btn.disabled = left <= 0;
+    btn.textContent = left > 0 ? 'Snooze 5 minutes (' + left + ' left)' : 'No snoozes left';
+  }
+
+  var holdBtn = document.getElementById('alarmDone');
+  var holdFill = document.getElementById('alarmFill');
+  var HOLD_MS = 2000;
+
+  function resetHold() {
+    clearTimeout(alarmHoldTimer);
+    alarmHoldTimer = null;
+    holdFill.style.transition = 'none';
+    holdFill.style.width = '0%';
+  }
+  holdBtn.addEventListener('pointerdown', function (e) {
+    holdBtn.setPointerCapture(e.pointerId);
+    holdFill.style.transition = 'width ' + HOLD_MS + 'ms linear';
+    holdFill.style.width = '100%';
+    alarmHoldTimer = setTimeout(function () {
+      var id = alarmTaskId;
+      hideAlarm();
+      if (id) toggleDone(id);
+      ensureAlarm(); // another strict task may be waiting behind this one
+    }, HOLD_MS);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+    holdBtn.addEventListener(ev, resetHold);
+  });
+
+  document.getElementById('alarmSnooze').addEventListener('click', function () {
+    var t = tasks.find(function (x) { return x.id === alarmTaskId; });
+    if (!t) { hideAlarm(); return; }
+    var left = t.snoozesLeft == null ? 3 : t.snoozesLeft;
+    if (left <= 0) return;
+    t.snoozesLeft = left - 1;
+    hideAlarm();
+    snoozeTask(t.id, 5);
+  });
 
   // ---------- Boot ----------
   document.getElementById('todayLine').textContent =
