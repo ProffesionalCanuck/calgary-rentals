@@ -643,8 +643,9 @@
         tryDirect(title, body, t.id);
       }
     }
-    if (!alarmTaskId) {
+    if (!alarmTaskId && !document.hidden) {
       // The full-screen alarm has its own siren; don't double up.
+      // And a hidden tab stays quiet — the notification itself is the alert.
       showBanner(title);
       beepAndBuzz();
     }
@@ -702,8 +703,12 @@
     updateSnoozeBtn(t);
     alarmEl.classList.add('show');
     clearInterval(alarmBeepTimer);
-    alarmBeepTimer = setInterval(beepAndBuzz, 2500);
-    beepAndBuzz();
+    // Siren only sounds while the app is actually on screen; a hidden
+    // tab would otherwise beep invisibly in the background forever.
+    alarmBeepTimer = setInterval(function () {
+      if (!document.hidden) beepAndBuzz();
+    }, 2500);
+    if (!document.hidden) beepAndBuzz();
     if (navigator.wakeLock) {
       // Keep the screen on while the alarm is demanding attention.
       navigator.wakeLock.request('screen')
