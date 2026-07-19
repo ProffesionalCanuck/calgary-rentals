@@ -152,6 +152,17 @@
   }
   form.add .submit { width: 100%; font-size: 1.05rem; min-height: 52px; }
 
+  .quick-row { display: flex; gap: 0.7rem; margin-bottom: 1rem; }
+  .quick-row button { flex: 1; min-height: 52px; }
+  .btn-outline {
+    background: var(--card);
+    color: var(--ink);
+    border: 1.5px solid var(--line);
+    font-weight: 600;
+    padding: 0.55rem 0.9rem;
+  }
+  .btn-accent.listening { background: var(--overdue); color: #FFF6F2; }
+
   .group { margin-bottom: 1.5rem; }
   .group > h2 {
     font-size: 0.72rem;
@@ -313,6 +324,11 @@
   <div class="notify-bar" id="notifyBar">
     <p>Turn on notifications so reminders can pop up on your phone.</p>
     <button class="btn-accent" id="notifyBtn" type="button">Turn on</button>
+  </div>
+
+  <div class="quick-row">
+    <button class="btn-accent" id="speakBtn" type="button">🎤 Speak a reminder</button>
+    <button class="btn-outline" id="wallBtn" type="button">🖼️ Wallpaper my list</button>
   </div>
 
   <form class="add" id="addForm">
@@ -767,6 +783,159 @@
     hideAlarm();
     snoozeTask(t.id, 5);
   });
+
+  // ---------- Voice quick-add ----------
+  var speakBtn = document.getElementById('speakBtn');
+  var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Rec) {
+    speakBtn.style.display = 'none';
+  } else {
+    var rec = new Rec();
+    rec.lang = navigator.language || 'en-CA';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    var listening = false;
+    speakBtn.addEventListener('click', function () {
+      if (listening) { rec.stop(); return; }
+      try { rec.start(); } catch (e) { return; }
+      listening = true;
+      speakBtn.classList.add('listening');
+      speakBtn.textContent = '🎤 Listening… speak now';
+    });
+    rec.onresult = function (e) {
+      var heard = e.results[0][0].transcript.trim();
+      if (!heard) return;
+      var parsed = parseSpoken(heard);
+      tasks.push({
+        id: uid(), title: parsed.title, due: parsed.due,
+        repeat: 'none', strict: false, snoozesLeft: 3,
+        done: false, notified: false
+      });
+      save(); render();
+      showBanner('Added: ' + parsed.title + (parsed.due ? ' — ' + friendlyWhen(parsed.due) : ''));
+    };
+    rec.onend = function () {
+      listening = false;
+      speakBtn.classList.remove('listening');
+      speakBtn.textContent = '🎤 Speak a reminder';
+    };
+    rec.onerror = function () {
+      showBanner("Didn't catch that — tap the mic and try again.");
+    };
+  }
+
+  // Pulls "tomorrow", "tonight", and "at 7 / at 7:30 pm" out of a spoken phrase.
+  function parseSpoken(text) {
+    var title = text;
+    var dayOffset = 0;
+    var hour = null, minute = 0, meridiem = '';
+    if (/\btomorrow\b/i.test(title)) {
+      dayOffset = 1;
+      title = title.replace(/\btomorrow\b/i, '');
+    }
+    if (/\btonight\b/i.test(title)) {
+      hour = 20;
+      title = title.replace(/\btonight\b/i, '');
+    }
+    var m = title.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*([ap])\.?\s*m\.?/i) ||
+            title.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b/);
+    if (m) {
+      hour = parseInt(m[1], 10);
+      minute = m[2] ? parseInt(m[2], 10) : 0;
+      meridiem = (m[3] || '').toLowerCase();
+      if (meridiem === 'p' && hour < 12) hour += 12;
+      if (meridiem === 'a' && hour === 12) hour = 0;
+      title = title.replace(m[0], '');
+    }
+    title = title.replace(/\s{2,}/g, ' ').trim()
+      .replace(/^(to|and)\s+/i, '')
+      .replace(/[\s.,!?]+$/, '');
+    if (!title) title = text.trim();
+    var due = null;
+    if (hour !== null || dayOffset > 0) {
+      var d = new Date();
+      d.setDate(d.getDate() + dayOffset);
+      d.setHours(hour === null ? 9 : hour, minute, 0, 0);
+      // "at 5" with no am/pm that already passed probably means 5 in the evening
+      if (d <= new Date() && !meridiem && hour !== null && hour < 12) d.setHours(hour + 12);
+      if (d <= new Date()) d.setDate(d.getDate() + 1);
+      due = d.toISOString();
+    }
+    return { title: title, due: due };
+  }
+
+  // ---------- Wallpaper of the list ----------
+  document.getElementById('wallBtn').addEventListener('click', makeWallpaper);
+
+  function makeWallpaper() {
+    var W = 1080, H = 2400;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var x = c.getContext('2d');
+    x.fillStyle = '#131812';
+    x.fillRect(0, 0, W, H);
+
+    var open = tasks.filter(function (t) { return !t.done; }).sort(function (a, b) {
+      if (!a.due && !b.due) return 0;
+      if (!a.due) return 1;
+      if (!b.due) return -1;
+      return new Date(a.due) - new Date(b.due);
+    });
+
+    // Top third stays clear for the lock-screen clock.
+    var y = 900;
+    x.fillStyle = '#98A392';
+    x.font = '600 38px sans-serif';
+    var dateLabel = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+    x.fillText('MY REMINDERS — ' + dateLabel.toUpperCase(), 84, y);
+    y += 100;
+
+    function clip(t, font, max) {
+      x.font = font;
+      if (x.measureText(t).width <= max) return t;
+      while (t.length && x.measureText(t + '…').width > max) t = t.slice(0, -1);
+      return t + '…';
+    }
+
+    if (!open.length) {
+      x.fillStyle = '#E7ECE4';
+      x.font = '600 54px sans-serif';
+      x.fillText('Nothing on the list — nice. ✓', 84, y + 20);
+    }
+    var shown = open.slice(0, 11);
+    var now = new Date();
+    shown.forEach(function (t) {
+      var overdue = t.due && new Date(t.due) <= now;
+      x.strokeStyle = overdue ? '#F08A7E' : '#63C08E';
+      x.lineWidth = 6;
+      x.beginPath();
+      x.arc(112, y - 18, 24, 0, Math.PI * 2);
+      x.stroke();
+      x.fillStyle = overdue ? '#F08A7E' : '#E7ECE4';
+      x.font = '600 52px sans-serif';
+      x.fillText(clip(t.title, '600 52px sans-serif', W - 260), 172, y);
+      if (t.due) {
+        y += 58;
+        x.fillStyle = overdue ? '#F08A7E' : '#98A392';
+        x.font = '400 40px sans-serif';
+        x.fillText((overdue ? '⚠ was due ' : '') + friendlyWhen(t.due), 172, y);
+      }
+      y += 92;
+    });
+    if (open.length > shown.length) {
+      x.fillStyle = '#98A392';
+      x.font = '400 40px sans-serif';
+      x.fillText('+ ' + (open.length - shown.length) + ' more in the app…', 172, y);
+    }
+
+    var a = document.createElement('a');
+    a.download = 'my-reminders-wallpaper.png';
+    a.href = c.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showBanner('Wallpaper saved! Open the photo, then “Set as wallpaper.”');
+  }
 
   // ---------- Boot ----------
   document.getElementById('todayLine').textContent =

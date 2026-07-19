@@ -1,6 +1,6 @@
 /* Service worker: caches the app so it opens instantly and works offline,
    and lets the page show real Android notifications while it is open. */
-var CACHE = 'my-reminders-v3';
+var CACHE = 'my-reminders-v4';
 var ASSETS = ['.', 'index.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', function (e) {
