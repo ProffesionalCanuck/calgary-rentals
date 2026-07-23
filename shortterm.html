@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>South Calgary — Month-to-Month 2BR Search Hub</title>
+<style>
+  :root {
+    --bg: #1a1c20;
+    --panel: #25282e;
+    --accent: #4d9fff;
+    --ok: #4dff9f;
+    --text: #e8eaed;
+    --text-dim: #9aa0a6;
+    --border: #3a3d44;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem 1.25rem 3rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .sub { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 1.25rem; line-height: 1.5; }
+
+  .criteria {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.75rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .criteria b { color: var(--text); }
+  .chip {
+    display: inline-block;
+    background: #33363d;
+    color: var(--accent);
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin: 2px 3px 2px 0;
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    margin: 1.75rem 0 0.35rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.35rem;
+  }
+  .grouphint { color: var(--text-dim); font-size: 0.82rem; margin-bottom: 0.9rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem 1rem;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .card .site { font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+  .card .badge {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
+    padding: 2px 7px; border-radius: 20px; text-transform: uppercase;
+  }
+  .badge.verified { background: rgba(77,255,159,0.15); color: var(--ok); }
+  .badge.best { background: rgba(77,159,255,0.18); color: var(--accent); }
+  .card .desc { color: var(--text-dim); font-size: 0.83rem; margin: 6px 0 10px; line-height: 1.45; flex-grow: 1; }
+  .card .cta { color: var(--accent); font-size: 0.82rem; font-weight: 600; }
+
+  .foot { color: var(--text-dim); font-size: 0.8rem; margin-top: 2rem; line-height: 1.6; }
+  .foot a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>South Calgary — Month-to-Month 2BR Hub</h1>
+<div class="sub">One place to search every major rental site at once for temporary places. Click a site — it opens in a new tab. Then apply the filters below on each.</div>
+
+<div class="criteria">
+  <b>What you're looking for — set these on each site:</b><br>
+  <span class="chip">2 bedrooms</span>
+  <span class="chip">Month-to-month / short term</span>
+  <span class="chip">Furnished or unfurnished</span>
+  <span class="chip">South Calgary</span><br>
+  <span style="color:var(--text-dim)">Tip: search the phrase <b>"month to month"</b> in a site's keyword box — it surfaces the temporary places better than "short term."</span>
+</div>
+
+<h2>Best for month-to-month &amp; furnished</h2>
+<div class="grouphint">These sites specialize in temporary / furnished stays — start here.</div>
+<div class="grid">
+
+  <a class="card" href="https://www.kijiji.ca/b-short-term-rental/calgary/c42l1700199" target="_blank" rel="noopener">
+    <div class="site">Kijiji — Short-Term <span class="badge verified">Verified · 70</span></div>
+    <div class="desc">Calgary short-term rentals category. Biggest source for month-to-month &amp; sublets. In the sidebar pick <b>2 bedrooms</b>.</div>
+    <div class="cta">Open Kijiji &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.furnishedfinder.com/housing/Calgary--AB" target="_blank" rel="noopener">
+    <div class="site">Furnished Finder</div>
+    <div class="desc">Built for 30+ day <b>furnished</b> monthly stays. Search Calgary, filter by beds and map area.</div>
+    <div class="cta">Open Furnished Finder &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.airbnb.ca/s/Calgary--AB/homes" target="_blank" rel="noopener">
+    <div class="site">Airbnb — Monthly</div>
+    <div class="desc">Set <b>Monthly stays</b> (28+ nights) + 2 bedrooms for furnished month-to-month. Zoom map to south Calgary.</div>
+    <div class="cta">Open Airbnb &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.corporatestays.com/en/canada/calgary" target="_blank" rel="noopener">
+    <div class="site">Corporate Stays</div>
+    <div class="desc">Furnished executive suites, flexible month-to-month terms. Calgary inventory.</div>
+    <div class="cta">Open Corporate Stays &rarr;</div>
+  </a>
+
+</div>
+
+<h2>Big aggregators — cast the widest net</h2>
+<div class="grouphint">General rental sites. Filter to 2 beds + south Calgary, and look for month-to-month in the listing text.</div>
+<div class="grid">
+
+  <a class="card" href="https://www.facebook.com/marketplace/calgary/propertyrentals" target="_blank" rel="noopener">
+    <div class="site">Facebook Marketplace</div>
+    <div class="desc">Huge for sublets &amp; short-term. Filter 2 bed; search "month to month" in the box.</div>
+    <div class="cta">Open Marketplace &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.zumper.com/apartments-for-rent/calgary-ab" target="_blank" rel="noopener">
+    <div class="site">Zumper</div>
+    <div class="desc">Has a short-term / furnished toggle. Set 2 beds and draw to south Calgary.</div>
+    <div class="cta">Open Zumper &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.padmapper.com/apartments/calgary-ab" target="_blank" rel="noopener">
+    <div class="site">PadMapper</div>
+    <div class="desc">Map-based aggregator (pulls many sources). Filter beds and area.</div>
+    <div class="cta">Open PadMapper &rarr;</div>
+  </a>
+
+  <a class="card" href="https://rentals.ca/calgary" target="_blank" rel="noopener">
+    <div class="site">Rentals.ca</div>
+    <div class="desc">Pulls listings from many sites at once. Filter 2 beds + south communities.</div>
+    <div class="cta">Open Rentals.ca &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.rentfaster.ca/ab/calgary/rentals/?beds=2#listview" target="_blank" rel="noopener">
+    <div class="site">RentFaster — 2 bed</div>
+    <div class="desc">Pre-filtered to 2-bedroom Calgary. Add Term of Lease → Short Term, and south communities.</div>
+    <div class="cta">Open RentFaster &rarr;</div>
+  </a>
+
+</div>
+
+<h2>Search everything at once</h2>
+<div class="grouphint">Google across all sites for the exact phrasing.</div>
+<div class="grid">
+
+  <a class="card" href="https://www.google.com/search?q=%22month+to+month%22+2+bedroom+furnished+rental+south+Calgary" target="_blank" rel="noopener">
+    <div class="site">Google — "month to month" 2BR</div>
+    <div class="desc">"month to month" 2 bedroom furnished rental south Calgary — one search across every site.</div>
+    <div class="cta">Run Google search &rarr;</div>
+  </a>
+
+  <a class="card" href="https://www.google.com/search?q=2+bedroom+month+to+month+rental+SE+SW+Calgary+furnished" target="_blank" rel="noopener">
+    <div class="site">Google — SE/SW variant</div>
+    <div class="desc">2 bedroom month to month rental SE/SW Calgary furnished — catches quadrant listings.</div>
+    <div class="cta">Run Google search &rarr;</div>
+  </a>
+
+</div>
+
+<div class="foot">
+  Verified live: Kijiji short-term (70 listings). The rest are each site's real Calgary search page — apply the filters listed on the card. Furnished Finder and RentFaster block automated checks, so open them directly. Not affiliated with any of these sites; links go to their public search pages.
+</div>
+
+</body>
+</html>
