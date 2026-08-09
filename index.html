@@ -193,15 +193,15 @@
 </div>
 
 <h1>SE Calgary Rental Houses</h1>
-<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings ($2000+, available immediately, with photos) in a new tab, and shows a price guide below.</div>
+<div class="sub">Click a neighborhood on the map. It opens that neighborhood's live RentFaster house listings ($2000+, available now or Sept 1, with photos) in a new tab, and shows a price guide below.</div>
 
 <div class="commands">
-  <b>Tip:</b> Each tile shows how many houses ($2000+, available to move in right now) are for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see them all in one long list.
+  <b>Tip:</b> Each tile shows how many houses ($2000+, ready now or for September 1st) are for rent in that exact neighborhood. Clicking a tile opens those listings on RentFaster with photos and full details. Or use the button below to see them all in one long list.
 </div>
 
 <div id="map"></div>
 
-<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses ($2000+, available now) in one list &rarr;</a></div>
+<div id="all-link-box"><a id="all-link" href="#" target="_blank" rel="noopener">See all SE Calgary houses ($2000+, now or Sept 1) in one list &rarr;</a></div>
 <div id="panel-title"></div>
 <div id="panel"></div>
 
@@ -324,10 +324,10 @@ const heard = document.getElementById('heard');
 
 // Per-community counts: $2000+ AND available immediately (RentFaster exact filter).
 const liveCounts = {
-  "Mahogany": 7, "Copperfield": 6, "Walden": 6, "New Brighton": 5,
-  "Cranston": 5, "McKenzie Towne": 5, "Legacy": 3, "Auburn Bay": 3,
-  "Seton": 2, "Belmont (SW)": 2, "McKenzie Lake": 1, "Chaparral": 1,
-  "Douglasdale/Glen": 0, "Wolf Willow": 0, "Quarry Park": 0
+  "Auburn Bay": 10, "Mahogany": 8, "Copperfield": 8, "McKenzie Towne": 8,
+  "Walden": 7, "New Brighton": 7, "Cranston": 6, "Legacy": 6,
+  "Seton": 5, "Belmont (SW)": 5, "Chaparral": 3, "McKenzie Lake": 2,
+  "Douglasdale/Glen": 1, "Wolf Willow": 1, "Quarry Park": 0
 };
 
 function buildMap() {
@@ -354,8 +354,8 @@ const communityName = {
 };
 
 const RF_BASE = 'https://www.rentfaster.ca/ab/calgary/rentals/house/';
-// price_min=2000 = houses $2000+. availability=Immediate = available for move-in right now.
-const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community&price_min=2000&availability=Immediate#listview';
+// price_min=2000 = houses $2000+. availability=Immediate + September = move in now or Sept 1.
+const RF_SUFFIX = '&community_subtype=Community&proximity_type=location-community&price_min=2000&availability=Immediate&availability=September#listview';
 
 function searchUrl(name) {
   const c = communityName[name] || name;
@@ -381,7 +381,7 @@ function select(name, autoOpen) {
   panelTitle.textContent = name;
 
   let html = '<div class="search-link"><a href="' + searchUrl(name) +
-    '" target="_blank" rel="noopener">Browse $2000+ houses (available now) in ' + name +
+    '" target="_blank" rel="noopener">Browse $2000+ houses (now or Sept 1) in ' + name +
     ' on RentFaster &rarr;</a></div>';
 
   if (items.length === 0) {
