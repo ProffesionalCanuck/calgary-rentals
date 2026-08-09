@@ -84,9 +84,34 @@
 
   .foot { color: var(--text-dim); font-size: 0.8rem; margin-top: 2rem; line-height: 1.6; }
   .foot a { color: var(--accent); }
+
+  .pagenav {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .pagenav a {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: var(--panel);
+  }
+  .pagenav a.here { border-color: var(--accent); color: var(--accent); }
+  .pagenav a:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
+
+<div class="pagenav">
+  <a href="./">🏠 Houses map</a>
+  <a class="here" href="./shortterm.html">🔑 2BR / short-term hub</a>
+</div>
 
 <h1>South Calgary — Month-to-Month 2BR Hub</h1>
 <div class="sub">One place to search every major rental site at once for temporary places. Click a site — it opens in a new tab. Then apply the filters below on each.</div>
