@@ -69,8 +69,13 @@ verify() {
   fi
 
   echo "==> Outbound pull correctly BLOCKED?"
-  if ollama pull tinyllama >/dev/null 2>&1; then
+  # Probe with the smallest thing in the registry, and clean it up if the
+  # pull unexpectedly succeeds -- a failed lockdown shouldn't also leave
+  # several hundred MB of junk on disk.
+  local probe="tinyllama:latest"
+  if ollama pull "$probe" >/dev/null 2>&1; then
     echo "    FAIL -- pull succeeded, egress is still open"
+    ollama rm "$probe" >/dev/null 2>&1 || true
     exit 1
   else
     echo "    OK -- pull refused, egress is closed"
